@@ -467,13 +467,6 @@ def upload():
     return jsonify({"task_id": task.id}), 202
 
 
-
-# --------------------
-# Preview Endpoint
-# --------------------
-
-
-
 # --------------------
 # File List Endpoint
 # --------------------
@@ -487,7 +480,9 @@ def list_files():
 
 # --------------------
 
-
+# --------------------
+# Preview Endpoint
+# --------------------
 
 @app.route('/file-preview/<filename>', methods=['GET'])
 def file_preview(filename):
@@ -518,12 +513,8 @@ def file_preview(filename):
                         # If it's a single object, wrap it in a list for consistent handling
                         preview = [full_data]
                 except json.JSONDecodeError:
-                    # Fallback if it's not a valid single JSON structure
-                    # This might happen if the file is malformed or truly NDJSON but with issues
                     pass # Will proceed to NDJSON attempt if preview is still empty
-            
-            # If preview is still empty (e.g., not a single JSON array/object, or initial parse failed),
-            # try treating it as newline-delimited JSON.
+
             if not preview:
                 # Reopen the file to read lines if the first attempt failed
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -537,7 +528,6 @@ def file_preview(filename):
                             preview.append({'value': line.strip()})
 
 
-        # anything else → just return first 5 raw lines
         else:
             with open(file_path, 'r', encoding='utf-8') as f:
                 lines = list(itertools.islice(f, 5))
@@ -545,15 +535,14 @@ def file_preview(filename):
 
         # Ensure all data in the preview is JSON-serializable
         cleaned_preview = serialize_json_safe(preview)
-        
+
         return jsonify({'preview': cleaned_preview})
-    
+
     except Exception as e:
         # Log the error for debugging
         app.logger.error(f"Error in file-preview: {e}")
         return jsonify({'error': str(e)}), 500
 
-# ... (rest of the code) ...
 
 
 # --------------------
@@ -650,7 +639,6 @@ def list_mysql_tables():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# --- REPLACE the current list_mysql_columns -------  (≈ L84-95)
 @app.route('/api/mysql/columns', methods=['GET'])
 def list_mysql_columns():
     db     = request.args.get('database')
@@ -662,7 +650,7 @@ def list_mysql_columns():
         ORDER  BY ORDINAL_POSITION
     """
     try:
-        conn = get_connection()                     # no need to USE <db>
+        conn = get_connection()                  
         with conn.cursor() as cur:
             cur.execute(sql, (db, table))
             cols = [row['COLUMN_NAME'] for row in cur.fetchall()]
@@ -883,14 +871,14 @@ def upload_to_mongodb():
 def get_mysql_shard_status():
     database = request.args.get('database')
     table = request.args.get('table')
-    
+
     if not all([database, table]):
         return jsonify({"error": "Database and table parameters are required"}), 400
-    
+
     try:
         status = sharding_status_cache.get((database, table), {})
         partitions = global_sharded_data.get((database, table), {})
-        
+
         return jsonify({
             "status": status.get('status', 'unknown'),
             "method": status.get('method', ''),
@@ -902,7 +890,7 @@ def get_mysql_shard_status():
     except Exception as e:
         logger.error(f"Error fetching MySQL shard status: {str(e)}")
         return jsonify({"error": str(e)}), 500
-    
+
 @app.route("/api/mongodb/shard-status", methods=["GET"])
 def get_mongodb_shard_status():
     from bson import MinKey, MaxKey
@@ -1530,12 +1518,8 @@ def mysql_shard_task(data):
 
 @celery.task(name="main.mysql_query_performance_task")
 def mysql_query_performance_task(data):
-    """
-    Runs the user SQL against both the full table and the in‐memory partition,
-    in batches of 50k rows, so we can time each without blocking Flask.
-    """
+   
     import time, re
-    from decimal import Decimal
 
     database          = data.get("database")
     table             = data.get("table")
@@ -1545,7 +1529,7 @@ def mysql_query_performance_task(data):
     # 1) Execute on full (unsharded) table in batches
     conn = get_connection(database)
     with conn.cursor(pymysql.cursors.SSDictCursor) as cur:
-        
+
         start_full = time.time()
         cur.execute(user_query)
         full_rows = []
@@ -1619,18 +1603,11 @@ def mongodb_query_performance_task(database, collection, filter_str):
 
 @celery.task(bind=True)
 def custom_shard_task(self, data):
-    # Assuming custom_shard_handler is defined elsewhere or logic is inline
-    # from your_module import custom_shard_handler
-    # return custom_shard_handler(data)
     return {"error": "Custom shard handler not implemented in this context"}
 
-# Removed mysql_query_perf_task as its logic is now synchronous in mysql_query_performance endpoint
 
 @celery.task(bind=True)
-def mongodb_query_perf_task_celery(self, data): # Renamed to avoid conflict
-    # Assuming mongodb_query_performance is defined elsewhere or logic is inline
-    # from your_module import mongodb_query_performance
-    # return mongodb_query_performance(data)
+def mongodb_query_perf_task_celery(self, data): 
     return {"error": "MongoDB query performance task not implemented in this context"}
 
 @app.route('/api/<db_type>/shard', methods=['POST'])
@@ -1667,9 +1644,6 @@ def trigger_query_perf(db_type):
     else:
         return jsonify({"error": "Invalid database type"}), 400
 
-# Removed mysql_query_perf_task as its logic is now synchronous in mysql_query_performance endpoint
-
-# Removed mongodb_query_perf_task as its logic is now synchronous in mongo_query_performance_sync endpoint
 
 @app.route('/api/mysql/shard/partitions', methods=['GET'])
 def get_mysql_partitions():
@@ -1685,9 +1659,6 @@ def get_mysql_partitions():
 
 @app.route('/api/task-result/<task_id>', methods=['GET'])
 def task_result(task_id):
-    # This endpoint is primarily for Celery tasks.
-    # For synchronous MySQL sharding, the frontend won't poll this.
-    # However, if you use Celery for other tasks, this remains relevant.
     task = celery.AsyncResult(task_id)
     if task.state == 'PENDING':
         return jsonify({'status': 'pending'})
@@ -1696,11 +1667,6 @@ def task_result(task_id):
     elif task.state == 'SUCCESS':
         return jsonify({'status': 'done', 'result': serialize_json_safe(task.result)})
     return jsonify({'status': task.state})
-
-# @app.route('/login')
-# def login_page():
-#     # allow unauthenticated users to hit your React login route
-#     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/register')
 def register_page():
@@ -1717,20 +1683,6 @@ def serve_react_app(path):
     # otherwise serve index.html and let React Router take over
     return send_from_directory(app.static_folder, 'index.html')
 
-# @app.route('/<path:path>')
-# @authenticate_token
-# def serve_static(path):
-#     # now any other React route (including /demopage) requires a valid token
-#     full = os.path.join(app.static_folder, path)
-#     if os.path.isfile(full):
-#         return send_from_directory(app.static_folder, path)
-#     return send_from_directory(app.static_folder, 'index.html')
-
-# @app.route('/')
-# @authenticate_token
-# def serve_root():
-#     return send_from_directory(app.static_folder, 'index.html')
-
 @app.errorhandler(404)
 
 def not_found(e):
@@ -1738,4 +1690,3 @@ def not_found(e):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
