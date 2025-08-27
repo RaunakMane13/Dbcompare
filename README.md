@@ -144,9 +144,9 @@ mkdir -p shard-demo/configsrv shard-demo/configsrv1 shard-demo/configsrv2 shard-
 
 ## 🚀 Usage  
 
-- **Login/Signup** to unlock the demo page.  
+- **Login/Signup** → user authentication/authorization.  
 - **Upload CSV/JSON** → Select databases for insertion.  
-- **Preview & Explore** → View first rows of uploaded files.  
+- **Preview & Explore** → Preview of uploaded files.  
 - **Visualize** → Generate correlation, feature importance, and histograms.  
 - **Shard & Benchmark** → Compare query performance on sharded vs unsharded tables/collections.  
 - **Edit Records** → Paginated inline editor with change tracking.  
