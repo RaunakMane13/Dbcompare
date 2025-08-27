@@ -1,0 +1,8 @@
+flask
+flask-cors
+werkzeug
+pymongo
+neo4j
+mysql-connector-python
+bcrypt
+pyjwt
