@@ -78,7 +78,7 @@ mkdir -p shard-demo/configsrv shard-demo/configsrv1 shard-demo/configsrv2 shard-
 		rs.status()
 					
 			
-		Shard server:
+		# Shard server:
 			nohup mongod --shardsvr --port 28081 --bind_ip localhost --replSet shard_repl --dbpath /home/neeraj/shard-demo/shardrep1 &
 		
 			nohup mongod --shardsvr --port 28082 --bind_ip localhost --replSet shard_repl --dbpath /home/neeraj/shard-demo/shardrep2 &
