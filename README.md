@@ -44,10 +44,10 @@ npm run build
 
 # Sharding setup:
 	
-Create required directories for data and configurations:
+# Create required directories for data and configurations:
 mkdir -p shard-demo/configsrv shard-demo/configsrv1 shard-demo/configsrv2 shard-demo/shardrep1 shard-demo/shardrep2 shard-demo/shardrep3 shard-demo/shard2rep1 shard-demo/shard2rep2 shard demo/shard2rep3 
 
-Config server:
+# Config server:
 		nohup mongod --configsvr  --port 28041 --bind_ip localhost --replSet config_repl --dbpath /home/neeraj/shard-demo/configsrv &
 		
 		nohup mongod --configsvr  --port 28042 --bind_ip localhost --replSet config_repl --dbpath /home/neeraj/shard-demo/configsrv1 &
@@ -138,7 +138,7 @@ Config server:
 			rs.initiate(rsconf)
 			rs.status()
 			
-		MongoS:
+		# MongoS:
 			nohup mongos --configdb config_repl/localhost:28041,localhost:28042,localhost:28043 --bind_ip localhost &
 ```
 
