@@ -42,7 +42,16 @@ celery -A celery_app.celery worker -l INFO
 npm install
 npm run build
 
-# Sharding setup:
+# MySql setup
+sudo apt update && sudo apt install -y mysql-server
+sudo systemctl enable --now mysql
+mysql --version
+
+CREATE USER 'dbcompare'@'%' IDENTIFIED BY '*password*';
+GRANT ALL PRIVILEGES ON *.* TO 'dbcompare'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+# MongoDB Sharding setup
 	
 # Create required directories for data and configurations:
 mkdir -p shard-demo/configsrv shard-demo/configsrv1 shard-demo/configsrv2 shard-demo/shardrep1 shard-demo/shardrep2 shard-demo/shardrep3 shard-demo/shard2rep1 shard-demo/shard2rep2 shard demo/shard2rep3 
