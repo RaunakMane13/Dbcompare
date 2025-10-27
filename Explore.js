@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import Nav from './components/Nav';
 
 export default function ExplorePage() {
   const [files, setFiles] = useState([]);
   const [preview, setPreview] = useState({ columns: [], rows: [] });
   const [error, setError] = useState(null);
+  const sortedFiles = Array.isArray(files) ? [...files].sort((a,b) => a.localeCompare(b)) : [];
 
   useEffect(() => {
-    fetch('/api/files')
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/files`)
       .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
       .then(data => setFiles(data.files || []))
       .catch(e => setError(`Could not load file list: ${e}`));
@@ -16,7 +18,7 @@ export default function ExplorePage() {
     setError(null);
     setPreview({ columns: [], rows: [] });
     try {
-      const url = `/file-preview/${encodeURIComponent(filename)}`;
+      const url = `${process.env.REACT_APP_API_BASE_URL}/file-preview/${encodeURIComponent(filename)}`;
       const res = await fetch(url);
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
@@ -38,6 +40,8 @@ export default function ExplorePage() {
   };
 
   return (
+    <>
+    <Nav />
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-blue-800 text-white p-4">
         <h1 className="text-xl font-bold">DBCompare — File Explorer</h1>
@@ -53,7 +57,7 @@ export default function ExplorePage() {
         <section className="mb-6">
           <h2 className="font-semibold mb-2">Uploaded files:</h2>
           <div className="flex flex-wrap gap-2">
-            {files.map(f => (
+            {sortedFiles.map(f => (
               <button
                 key={f}
                 onClick={() => fetchFilePreview(f)}
@@ -99,5 +103,6 @@ export default function ExplorePage() {
         &copy; {new Date().getFullYear()} DBCompare
       </footer>
     </div>
+    </>
   );
 }

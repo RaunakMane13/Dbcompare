@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './ProjectOverview.css';
+import Nav from './components/Nav';
 
 export default function HomePage() {
   // const [folderSize, setFolderSize] = useState('Loading...'); // State for folder size
@@ -8,7 +9,7 @@ export default function HomePage() {
   const [folderSize, setFolderSize] = useState('');
 
   useEffect(() => {
-    fetch("https://dbcompare.webdev.gccis.rit.edu/api/folder-size")
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/folder-size`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Folder Size Data:", data);
@@ -18,7 +19,7 @@ export default function HomePage() {
   
 
 useEffect(() => {
-  fetch('https://dbcompare.webdev.gccis.rit.edu/api/user-count') // Ensure this matches your server's API endpoint
+  fetch(`${process.env.REACT_APP_API_BASE_URL}/user-count`) // Ensure this matches your server's API endpoint
     .then(response => response.json())
     .then(data => setUserCount(data.count))
     .catch(error => {
@@ -28,29 +29,11 @@ useEffect(() => {
 }, []);
 
   return (
+    <>
+    <Nav />
     <div className="main-content">
       {/* Header */}
-      <header className="header">
-        <div className="flex items-center space-x-2">
-          <div className="bg-gray-700 p-2 rounded">
-            <img src="/database.svg" alt="Logo" width={24} height={24} />
-          </div>
-          <span className="font-bold">DBCompare</span>
-        </div>
-        <nav className="nav">
-          <a href="#" className="hover:underline">Home</a>
-          <Link to="/project-overview" className="hover:underline">Project Overview</Link>
-          <Link to="/updates" className="hover:underline">Goals</Link>
-          <Link to="/features" className="hover:underline">Features</Link>
-          <Link to="/sharding" className="hover:underline">Sharding</Link>
-          {/* <a href="/sharding" className="hover:underline">Sharding</a> */}
-        </nav>
-        <div className="space-x-4">
-          <Link to="/signup" className="button">Sign up</Link>
-          <Link to="/login" className="button">Login</Link>
-        </div>
-      </header>
-
+      
       {/* Main Section */}
       <main className="main">
         <div className="max-w-4xl mx-auto">
@@ -107,5 +90,6 @@ useEffect(() => {
         </div>
       </footer>
     </div>
+    </>
   );
 }

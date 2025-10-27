@@ -3,12 +3,13 @@ import Select from 'react-select';
 import React, { useState , useEffect} from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import Nav from './components/Nav';
 
 export default function DemoPage() {
   const databaseOptions = [
     { value: 'mysql', label: 'MySQL' },
-    { value: 'mongodb', label: 'MongoDB' },
-    { value: 'neo4j', label: 'Neo4j' }
+    { value: 'mongodb', label: 'MongoDB' }
+    // { value: 'neo4j', label: 'Neo4j' }
   ];
 
   const [file, setFile] = useState(null);
@@ -74,14 +75,14 @@ export default function DemoPage() {
     formData.append('fileExtension', fileExtension);
   
     try {
-      const response = await axios.post('/api/upload', formData, {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/upload`, formData, {
         withCredentials: true
       });
   
       const taskId = response.data.task_id;
   
       const pollStatus = async () => {
-        const statusRes = await axios.get(`/api/upload-status/${taskId}`, { withCredentials: true });
+        const statusRes = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/upload-status/${taskId}`, { withCredentials: true });
         const data = statusRes.data;
   
         if (data.status === 'done') {
@@ -108,6 +109,8 @@ export default function DemoPage() {
   
 
   return (
+    <>
+    <Nav />
     <div className="min-h-screen bg-white flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-start p-8">
         <div className="w-full max-w-7xl bg-white rounded-lg shadow-lg p-6">
@@ -185,5 +188,6 @@ export default function DemoPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
