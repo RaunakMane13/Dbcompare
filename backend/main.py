@@ -42,32 +42,11 @@ build_dir = '/home/student/my-app/build'
 app = Flask(__name__, static_folder=build_dir, static_url_path='')
 
 # CORS
-CORS(
-    app,
-    resources={
-        r"/api/*": {
-            "origins": [
-                "https://dbcompare.webdev.gccis.rit.edu",
-                "http://172.16.1.254:5000",
-                "http://localhost:5000",
-                "http://localhost:3000",
-            ]
-        },
-        # (optional) keep this if you want to be explicit for file-preview in /api as well
-        r"/api/file-preview/*": {
-            "origins": [
-                "https://dbcompare.webdev.gccis.rit.edu",
-                "http://172.16.1.254:5000",
-                "http://localhost:5000",
-                "http://localhost:3000",
-            ]
-        },
-    },
-    supports_credentials=True,
-)
+CORS(app, resources={r"/api/*": {"origins": settings.ALLOWED_ORIGINS}},
+     supports_credentials=True)
 
 # Session
-app.secret_key = settings.SECRET_KEY
+app.config['SECRET_KEY'] = settings.SECRET_KEY
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = _dt.timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -76,7 +55,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 Session(app)
 
 # Paths
-app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = settings.UPLOAD_FOLDER
 os.makedirs(str(STATIC_DIR), exist_ok=True)
 
 # Blueprints
@@ -358,7 +337,7 @@ def mongodb_shard_task(data):
     method = data['method']
     try:
         client = MongoClient(
-            "mongodb://172.16.1.126:27017",
+            settings.MONGO_URI,
             serverSelectionTimeoutMS=60000,
             socketTimeoutMS=0
         )
@@ -508,7 +487,7 @@ def mysql_query_performance_task(data):
 
 @celery.task(name='main.mongodb_query_performance_task')
 def mongodb_query_performance_task(database, collection, filter_str):
-    client = MongoClient("mongodb://172.16.1.126:27017")
+    client = MongoClient(settings.MONGO_URI)
     db = client[database]
     coll = db[collection]
     unsharded_coll = db[f"{collection}_unsharded"]

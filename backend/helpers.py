@@ -18,9 +18,9 @@ global_sharded_data = {}
 
 # ---------- Mongo client (keep EXACT URI as in your current main.py) ----------
 # Your main.py currently has:
-#   mongo_client = MongoClient('mongodb://172.16.1.126:27017')
+#   mongo_client = MongoClient(settings.MONGO_URI)
 # To keep behavior identical, use the same here:
-mongo_client = MongoClient('mongodb://172.16.1.126:27017')
+mongo_client = MongoClient(settings.MONGO_URI)
 
 # ---------- Serializers ----------
 def serialize_mongo(obj):
