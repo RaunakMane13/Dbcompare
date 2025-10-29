@@ -168,3 +168,12 @@ Built with:
 - **Flask**, **Celery**, **PyMySQL**, **PyMongo**
 - **React**, **Tailwind-style UI**  
 - **Pandas**, **Scikit-learn**, **Matplotlib**, **Seaborn**  
+
+## 📁 Directory Structure
+
+- **backend/** — Flask app, Celery tasks, config, and API blueprints.
+- **frontend/** — React source (served by Flask).  
+  - **src/components/** — Reusable UI (e.g., `Nav.jsx`).  
+  - **src/pages/** — Route-level pages (e.g., `HomePage.js`, `Visualize.js`, `ProjectOverview.js`, etc.).  
+- **legacy/** — **Old redundant files** kept for reference; not imported by the app.
+- **requirements.txt** — Python dependencies for backend.
