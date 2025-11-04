@@ -1,1 +1,0 @@
-This folder contains **old redundant files** kept for historical reference. They are not used by the app and should not be imported or executed. Keep code here only when it has been replaced by a newer version and must be retained for reference.
