@@ -150,19 +150,19 @@ mkdir -p shard-demo/configsrv shard-demo/configsrv1 shard-demo/configsrv2 shard-
 		# MongoS:
 			nohup mongos --configdb config_repl/localhost:28041,localhost:28042,localhost:28043 --bind_ip localhost &
 
-#MySQL NDB Setup
+# MySQL NDB Setup
 
 1. Environment Preparation (All Nodes)
 sudo apt update
 sudo apt install -y wget curl gnupg lsb-release ufw
-# Firewall rules for full NDB communication
+# Firewall rules for full NDB communication:
 sudo ufw allow 22/tcp
 sudo ufw allow from 172.16.1.0/24 to any port 3306 proto tcp
 sudo ufw allow from 172.16.1.0/24 to any port 1186 proto tcp
 sudo ufw allow from 172.16.1.0/24 to any port 2202 proto tcp
 sudo ufw enable
 sudo ufw status verbose
-# Connectivity validation
+# Connectivity validation:
 ping -c 3 172.16.1.125
 ping -c 3 172.16.1.217
 ping -c 3 172.16.1.192
@@ -177,11 +177,11 @@ sudo apt update
 # Select: mysql-cluster-8.0
 
 3. Install Cluster Components by Role
-# Management + SQL Node (172.16.1.125)
+# Management + SQL Node (172.16.1.125):
 sudo apt install -y mysql-cluster-community-management-server mysql-server
-# Data Node 1 (172.16.1.217)
+# Data Node 1 (172.16.1.217):
 sudo apt install -y mysql-cluster-community-data-node
-# Data Node 2 (172.16.1.192)
+# Data Node 2 (172.16.1.192):
 sudo apt install -y mysql-cluster-community-data-node
 
 4. Management Node Configuration (172.16.1.125)
@@ -205,26 +205,26 @@ hostname=172.16.1.192
 datadir=/usr/local/mysql/data
 [mysqld]
 hostname=172.16.1.125
-# Management node connect string
+# Management node connect string:
 sudo nano /etc/mysql/mysql.conf.d/ndb_mgmd.cnf
 [mysql_cluster]
 ndb-connectstring=172.16.1.125
-# Start the management server
+# Start the management server:
 sudo ndb_mgmd -f /var/lib/mysql-cluster/config.ini --initial
-# Verify
+# Verify:
 ndb_mgm -e "show"
 
 5. Data Node Configuration (217 and 192)
-# Create directories
+# Create directories:
 sudo mkdir -p /usr/local/mysql/data
 sudo chown -R mysql:mysql /usr/local/mysql
-# Configure NDB
+# Configure NDB:
 sudo nano /etc/mysql/mysql.conf.d/ndbd.cnf
 [mysql_cluster]
 ndb-connectstring=172.16.1.125
-# Start data node
+# Start data node:
 sudo ndbmtd --initial
-# Verify from mgmt node
+# Verify from mgmt node:
 ndb_mgm -e "show"
 
 6. SQL Node Configuration (172.16.1.125)
