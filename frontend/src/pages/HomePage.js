@@ -41,7 +41,7 @@ useEffect(() => {
           <h1 className="mb-8">Securely compare and shard databases for scalable data management.</h1>
           <div className="button-group">
             <Link to="/explore" className="button">Explore</Link>
-            <Link to="/demo" className="button">Try demo</Link>
+            <Link to="/upload-disclaimer" className="button">Upload</Link>
           </div>
           <img
             className="aspect-[3/2] w-full rounded-2xl object-cover"

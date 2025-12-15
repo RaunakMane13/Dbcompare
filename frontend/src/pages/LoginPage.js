@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Nav from './components/Nav';
 import './App.css'; // Use the global styles
 
 const LoginPage = () => {
@@ -31,7 +32,7 @@ const LoginPage = () => {
       } else {
         setSuccessMessage(data.message || 'Login successful');
         // Redirect to the home page (which should be DemoPage or lead to it) after a successful login
-        setTimeout(() => navigate('/'), 1000); 
+        setTimeout(() => window.location.href = '/', 300);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -40,6 +41,8 @@ const LoginPage = () => {
   };
 
   return (
+    <>
+    <Nav />
     <div className="main-content flex justify-center items-center h-screen bg-gray-200">
       <div className="card w-96 p-6 bg-white shadow-lg rounded-lg">
         <h2 className="text-center text-2xl font-bold mb-4">Login</h2>
@@ -76,6 +79,7 @@ const LoginPage = () => {
         {successMessage && <p className="text-green-600 text-center mt-4">{successMessage}</p>}
       </div>
     </div>
+    </>
   );
 };
 

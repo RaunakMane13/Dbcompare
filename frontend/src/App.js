@@ -8,6 +8,7 @@ import Editor from './Editor';
 import SignupPage from './SignupPage';
 import LoginPage from './LoginPage';
 import ExplorePage from './Explore';
+import DisclaimerPage from './DisclaimerPage';
 // import DatasetDetails from './Details';
 // import Details from './Details';
 import ProjectOverview from './ProjectOverview';
@@ -20,7 +21,7 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/demo" element={<DemoPage />} />
+        <Route path="/upload" element={<DemoPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/explore" element={<ExplorePage />} />
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/visualize" element={<VisualizePage />} />
         <Route path="/editor" element={<Editor />} />
         <Route path="/sharding" element={<Sharding />} />
+        <Route path="/upload-disclaimer" element={<DisclaimerPage />} />
       </Routes>
     </Router>
   );

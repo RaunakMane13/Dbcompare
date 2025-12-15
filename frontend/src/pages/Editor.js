@@ -13,6 +13,11 @@ export default function DatabaseEditor() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);          // ← current page index (0-based)
   const [dirtyRows, setDirtyRows] = useState(new Set());
+  const [selectedRowIndex, setSelectedRowIndex] = useState(null); // which row is open in the details panel
+  const [saveError, setSaveError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [columnTypes, setColumnTypes] = useState({});
+
   // Fetch exactly 10 records for given page & table
   const fetchRecords = async (pageNum = 0, tableName = selectedTable) => {
     setLoading(true);
@@ -76,9 +81,26 @@ export default function DatabaseEditor() {
     setSelectedTable(table);
     setRecords([]);
     setPage(0);
+  
+    // Fetch expected datatypes (MySQL only)
+    if (selectedDatabaseType === "mysql") {
+      try {
+        const res = await fetch(`/api/mysql/column-types?database=${selectedDatabase}&table=${table}`);
+        const data = await res.json();
+        setColumnTypes(data.types || {});
+      } catch (e) {
+        console.error("Failed to fetch column types:", e);
+        setColumnTypes({});
+      }
+    } else {
+      // MongoDB: no fixed types unless you enforce schema
+      setColumnTypes({});
+    }
+  
     // Load first page of 10
     await fetchRecords(0, table);
   };
+  
 
   const handleRecordChange = (idx, field, val) => {
     const updated = [...records];
@@ -92,11 +114,12 @@ export default function DatabaseEditor() {
   };
 
   const handleSaveChanges = async () => {
+    setSaveError(null);
+    setFieldErrors({});
+  
     try {
       const res = await fetch(
-        `/api/${selectedDatabaseType}/update`
-        + `?database=${selectedDatabase}`
-        + `&table=${selectedTable}`,
+        `/api/${selectedDatabaseType}/update?database=${selectedDatabase}&table=${selectedTable}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -105,13 +128,30 @@ export default function DatabaseEditor() {
           })
         }
       );
-      if (!res.ok) throw new Error(await res.text());
+  
+      const data = await res.json().catch(() => ({}));
+  
+      if (!res.ok) {
+        // MySQL: show which column failed
+        if (data.fieldError?.field) {
+          setSaveError(data.message || "Update failed.");
+          setFieldErrors({
+            [data.fieldError.field]: data.fieldError.reason || data.details || "Invalid value"
+          });
+        } else {
+          setSaveError(data.message || data.details || data.error || "Failed to save changes.");
+        }
+        return;
+      }
+  
       alert('Records updated successfully!');
+      setDirtyRows(new Set());
     } catch (err) {
       console.error('Save failed:', err);
-      alert('Failed to save changes.');
+      setSaveError(err.message || 'Failed to save changes.');
     }
   };
+  
 
   return (
     <>
@@ -186,32 +226,84 @@ export default function DatabaseEditor() {
             </h2>
 
             {/* ← scrollable container for large tables */}
-            <div className="overflow-x-auto border border-gray-700 rounded">
-              <table className="table-auto w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-800">
-                    {records[0] && Object.keys(records[0]).map(field => (
-                      <th key={field} className="px-4 py-2 text-left">{field}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map((rec, i) => (
-                    <tr key={i} className={i % 2 === 0 ? 'bg-gray-900' : 'bg-gray-800'}>
-                      {Object.entries(rec).map(([field, val]) => (
-                        <td key={field} className="px-4 py-2">
-                          <input
-                            className="w-full bg-gray-700 text-white px-2 py-1 rounded"
-                            value={val ?? ''}
-                            onChange={e => handleRecordChange(i, field, e.target.value)}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* ← scrollable container for large tables (read-only view) */}
+<div className="overflow-x-auto border border-gray-700 rounded">
+  <table className="table-auto min-w-[1200px] w-full border-collapse">
+    <thead>
+      <tr className="bg-gray-800">
+        {records[0] && Object.keys(records[0]).map(field => (
+          <th
+            key={field}
+            className="px-4 py-2 text-left text-sm whitespace-nowrap"
+          >
+            {field}
+          </th>
+        ))}
+      </tr>
+    </thead>
+
+    <tbody>
+      {records.map((rec, i) => {
+        const isSelected = i === selectedRowIndex;
+        return (
+          <tr
+            key={i}
+            onClick={() => setSelectedRowIndex(i)}
+            className={
+              (isSelected ? 'bg-blue-900' : (i % 2 === 0 ? 'bg-gray-900' : 'bg-gray-800'))
+              + ' cursor-pointer'
+            }
+          >
+            {Object.entries(rec).map(([field, val]) => (
+              <td key={field} className="px-4 py-2 text-sm whitespace-nowrap">
+                {val !== null && val !== undefined ? String(val) : ''}
+              </td>
+            ))}
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+
+{/* Detailed editor for the selected row */}
+{selectedRowIndex !== null && records[selectedRowIndex] && (
+  <div className="mt-6 p-4 border border-gray-700 rounded-lg bg-gray-900">
+    <h3 className="text-lg font-semibold mb-4">
+      Row details (row #{page * 10 + selectedRowIndex + 1})
+    </h3>
+
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {Object.entries(records[selectedRowIndex]).map(([field, val]) => (
+        <div key={field} className="flex flex-col gap-1">
+          <label
+            className="text-xs font-semibold text-gray-400 uppercase"
+            title={columnTypes[field] ? `Expected: ${columnTypes[field]}` : ""}
+          >
+            {field}
+            {columnTypes[field] && (
+              <span className="ml-2 text-[10px] text-gray-500 normal-case">(i)</span>
+            )}
+          </label>
+          <input
+            className={`w-full bg-gray-700 text-white px-2 py-1 rounded ${
+              fieldErrors[field] ? 'border border-red-500' : ''
+            }`}
+            value={val ?? ''}
+            onChange={(e) => handleRecordChange(selectedRowIndex, field, e.target.value)}
+          />
+
+          {fieldErrors[field] && (
+            <div className="text-xs text-red-400">
+              {fieldErrors[field]}
             </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
 
             {/* ← pagination controls */}
             <div className="mt-4 flex justify-end space-x-2">
@@ -230,7 +322,11 @@ export default function DatabaseEditor() {
                 Next
               </button>
             </div>
-
+            {saveError && (
+              <div className="mt-4 mb-2 p-3 rounded bg-red-900/40 border border-red-700 text-red-200">
+                {saveError}
+              </div>
+            )}
             <div className="mt-6 text-center">
               <button
                 className="px-6 py-2 bg-green-600 rounded-lg hover:bg-green-700"

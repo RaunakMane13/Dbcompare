@@ -31,11 +31,21 @@ export default function DemoPage() {
       try {
         const response = await fetch('/api/home', { credentials: 'include' });
         if (response.ok) {
+          const pass = sessionStorage.getItem("dbcompare_upload_disclaimer_pass");
+        
+          if (pass !== "true") {
+            navigate("/upload-disclaimer");
+            return;
+          }
+        
+          // allow access this time, and force disclaimer next time
+          sessionStorage.removeItem("dbcompare_upload_disclaimer_pass");
           setIsAuthenticated(true);
+          return;
         } else {
           setIsAuthenticated(false);
           navigate('/login');
-        }
+        }        
       } catch {
         setIsAuthenticated(false);
         navigate('/login');
@@ -120,7 +130,7 @@ export default function DemoPage() {
             </div>
           )}
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">Recent Upload History</h1>
+            <h1 className="text-2xl font-bold">Upload Dataset</h1>
           </div>
           <div className="grid grid-cols-3 gap-8">
             <div className="col-span-1 bg-gray-50 p-4 rounded-lg shadow-inner">
