@@ -169,6 +169,22 @@ def mongodb_insert_chunk(chunk_df, collection_name, db_name):
                 break
             except Exception:
                 time.sleep(3)
+                
+def parse_mysql_field_error(err_msg: str):
+    """
+    Try to infer the column/field causing a MySQL datatype error from the error string.
+    Returns { field, reason } or None.
+    """
+    msg = str(err_msg)
+
+    # Common MySQL error patterns:
+    # "Incorrect integer value: 'abc' for column 'age' at row 1"
+    # "Data truncated for column 'price' at row 1"
+    import re
+    m = re.search(r"for column '([^']+)'", msg, re.IGNORECASE)
+    if m:
+        return {"field": m.group(1), "reason": msg}
+    return None
 
 def neo4j_insert_chunk(chunk_df, label_name):
     from neo4j import GraphDatabase

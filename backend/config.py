@@ -33,40 +33,6 @@ class Settings:
     CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
     CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
-settings = Settings()
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
-# Always load the .env relative to this file
-env_path = Path(__file__).resolve().parent / '.env'
-load_dotenv(dotenv_path=env_path)
-
-class Settings:
-    SECRET_KEY = os.getenv('SECRET_KEY')
-
-    # Paths
-    STATIC_DIR = os.getenv('STATIC_DIR')
-    UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
-
-    # MySQL
-    MYSQL_HOST = os.getenv('MYSQL_HOST')
-    MYSQL_USER = os.getenv('MYSQL_USER')
-    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
-
-    # MongoDB
-    MONGO_URI = os.getenv('MONGO_URI')
-
-    # Neo4j
-    NEO4J_URI = os.getenv('NEO4J_URI')
-    NEO4J_USER = os.getenv('NEO4J_USER')
-    NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
-
-    # Celery
-    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
-    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
-
-    # CORS
-    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',')
-
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLOWED_ORIGINS') else []
+    
 settings = Settings()

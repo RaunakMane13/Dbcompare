@@ -59,3 +59,9 @@ def login_user():
         return jsonify({'message': 'Login successful', 'token': token, 'expiresIn': JWT_EXPIRY_SECONDS})
     except Exception as e:
         return jsonify({'message': f'Login failed: {str(e)}'}), 500
+
+@auth_bp.post("/logout")
+def logout_user():
+    session.pop('token', None)
+    session.clear()
+    return jsonify({"message": "Logged out"}), 200

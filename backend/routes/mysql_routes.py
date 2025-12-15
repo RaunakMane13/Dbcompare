@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from helpers import get_connection, determine_column_types, serialize_json_safe, global_sharded_data
+from helpers import get_connection, determine_column_types, serialize_json_safe, global_sharded_data, parse_mysql_field_error
 
 mysql_bp = Blueprint("mysql", __name__, url_prefix="/api/mysql")
 
@@ -116,7 +116,44 @@ def update_mysql_records():
         conn.commit()
         return jsonify({'message': 'Records updated successfully'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        field_info = parse_mysql_field_error(str(e))
+        return jsonify({
+            "ok": False,
+            "errorType": "MYSQL_UPDATE_ERROR",
+            "message": "Update failed due to invalid value for a column.",
+            "details": str(e),
+            "fieldError": field_info  # { field, reason } or None
+        }), 400
+
+@mysql_bp.get("/column-types")
+def list_mysql_column_types():
+    db    = request.args.get('database')
+    table = request.args.get('table')
+
+    sql = """
+        SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s
+        ORDER BY ORDINAL_POSITION
+    """
+    try:
+        conn = get_connection()
+        with conn.cursor() as cur:
+            cur.execute(sql, (db, table))
+            rows = cur.fetchall()
+
+        # Build a friendly tooltip string per column
+        # Example: "int(11) | NULLABLE: NO"
+        types = {}
+        for r in rows:
+            name = r["COLUMN_NAME"]
+            col_type = r.get("COLUMN_TYPE") or r.get("DATA_TYPE")
+            nullable = r.get("IS_NULLABLE", "")
+            types[name] = f"{col_type}"
+            # | NULLABLE: {nullable}
+        return jsonify({"types": types})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @mysql_bp.post("/upload")
 def upload_to_mysql():
