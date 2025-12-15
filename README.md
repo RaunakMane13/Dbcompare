@@ -149,6 +149,92 @@ mkdir -p shard-demo/configsrv shard-demo/configsrv1 shard-demo/configsrv2 shard-
 			
 		# MongoS:
 			nohup mongos --configdb config_repl/localhost:28041,localhost:28042,localhost:28043 --bind_ip localhost &
+
+#MySQL NDB Setup
+
+1. Environment Preparation (All Nodes)
+sudo apt update
+sudo apt install -y wget curl gnupg lsb-release ufw
+# Firewall rules for full NDB communication
+sudo ufw allow 22/tcp
+sudo ufw allow from 172.16.1.0/24 to any port 3306 proto tcp
+sudo ufw allow from 172.16.1.0/24 to any port 1186 proto tcp
+sudo ufw allow from 172.16.1.0/24 to any port 2202 proto tcp
+sudo ufw enable
+sudo ufw status verbose
+# Connectivity validation
+ping -c 3 172.16.1.125
+ping -c 3 172.16.1.217
+ping -c 3 172.16.1.192
+
+2. Install MySQL APT Repository (All Nodes)
+cd /tmp
+wget https://dev.mysql.com/get/mysql-apt-config.deb
+sudo dpkg -i mysql-apt-config.deb
+sudo apt update
+# If config selector appears:
+# Select: MySQL Server & Cluster
+# Select: mysql-cluster-8.0
+
+3. Install Cluster Components by Role
+# Management + SQL Node (172.16.1.125)
+sudo apt install -y mysql-cluster-community-management-server mysql-server
+# Data Node 1 (172.16.1.217)
+sudo apt install -y mysql-cluster-community-data-node
+# Data Node 2 (172.16.1.192)
+sudo apt install -y mysql-cluster-community-data-node
+
+4. Management Node Configuration (172.16.1.125)
+sudo mkdir -p /var/lib/mysql-cluster
+sudo nano /var/lib/mysql-cluster/config.ini
+# Paste the following:
+[ndbd default]
+NoOfReplicas=2
+DataMemory=1024M
+IndexMemory=512M
+[tcp default]
+portnumber=2202
+[ndb_mgmd]
+hostname=172.16.1.125
+datadir=/var/lib/mysql-cluster
+[ndbd]
+hostname=172.16.1.217
+datadir=/usr/local/mysql/data
+[ndbd]
+hostname=172.16.1.192
+datadir=/usr/local/mysql/data
+[mysqld]
+hostname=172.16.1.125
+# Management node connect string
+sudo nano /etc/mysql/mysql.conf.d/ndb_mgmd.cnf
+[mysql_cluster]
+ndb-connectstring=172.16.1.125
+# Start the management server
+sudo ndb_mgmd -f /var/lib/mysql-cluster/config.ini --initial
+# Verify
+ndb_mgm -e "show"
+
+5. Data Node Configuration (217 and 192)
+# Create directories
+sudo mkdir -p /usr/local/mysql/data
+sudo chown -R mysql:mysql /usr/local/mysql
+# Configure NDB
+sudo nano /etc/mysql/mysql.conf.d/ndbd.cnf
+[mysql_cluster]
+ndb-connectstring=172.16.1.125
+# Start data node
+sudo ndbmtd --initial
+# Verify from mgmt node
+ndb_mgm -e "show"
+
+6. SQL Node Configuration (172.16.1.125)
+sudo nano /etc/mysql/mysql.conf.d/ndb_mysqld.cnf
+[mysqld]
+ndbcluster
+ndb-connectstring=172.16.1.125
+sudo systemctl restart mysql
+mysql -u root -p -e "SHOW ENGINES LIKE 'NDB%';"
+ndb_mgm -e "show"
 ```
 
 ## 🚀 Usage  
